@@ -74,9 +74,6 @@ def save_clustered_groups(df, output_dir="clustered_output"):
     os.makedirs(output_dir,exist_ok = True)
 
     for cluster_num in sorted(df["Cluster"].unique()):
-    #     df[df["Cluster"] == cluster_num].to_csv(f"group_cluster_{cluster_num}.csv", index=False)
-    # df.to_csv("student_clustered_results.csv", index=False)
-    # print("\nClustered results saved as 'student_clustered_results.csv'")
       df[df["Cluster"] == cluster_num].to_csv(
             os.path.join(output_dir, f"group_cluster_{cluster_num}.csv"), index=False
         )

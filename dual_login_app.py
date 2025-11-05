@@ -3,52 +3,143 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
-from sklearn.decomposition import PCA 
-from student_clustering import preprocess_data, run_kmeans, cluster_summary, plot_pca
+from sklearn.decomposition import PCA
+from student_clustering import preprocess_data, run_kmeans, cluster_summary, plot_pca, load_dataset
 from textblob import TextBlob
-from student_clustering import load_dataset
 
 DEFAULT_CSV = "student-mat.csv"
-st.title("Student Clustering Prototype")
-role = st.radio("Login as:", ["Student", "Teacher"])
+st.set_page_config(page_title="Student Clustering Model", layout="wide")
 
-#  student portal
+st.markdown(
+    """
+    <style>
+    
+    body {
+        background: #f8fafc;
+        color: #1f2937;
+        font-family: 'Inter', sans-serif;
+    }
 
+    .main {
+        padding: 1rem 2rem;
+    }
+
+    .title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #2563EB;
+        text-align: center;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .subtext {
+        text-align: center;
+        font-size: 1.1rem;
+        color: #4b5563;
+        margin-bottom: 2rem;
+    }
+
+    .stButton button {
+        background-color: #2563eb;
+        color: white;
+        border-radius: 8px;
+        padding: 0.6rem 1.2rem;
+        border: none;
+        transition: 0.2s;
+    }
+    .stButton button:hover {
+        background-color: #1d4ed8;
+    }
+
+    .student-card {
+        background-color: #11827;
+        font-size:0.95rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .cluster-msg {
+        background-color: #dbeafe;
+        border-left: 6px solid #2563eb;
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin-top: 1rem;
+        text-align: center;
+        font-weight: 500;
+        color: #1e40af;
+    }
+
+    .alert-success {
+        background-color: #dcfce7;
+        color: #166534;
+        border-radius: 10px;
+        padding: 0.7rem;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    
+    </style>
+""",
+    unsafe_allow_html=True
+)
+
+# ------------------ HOMEPAGE ------------------
+st.markdown("<div class='title'>🎓 Student Clustering Model</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtext'>Discover your learning peers and analyze academic patterns easily.</div>", unsafe_allow_html=True)
+
+
+
+st.markdown("---")
+
+# ------------------ LOGIN SELECTION ------------------
+st.markdown('<div id="login-section"></div>', unsafe_allow_html=True)
+role = st.radio("Login as:", ["Student", "Teacher"], horizontal=True)
+
+
+# ------------------ STUDENT PORTAL ------------------
 if role == "Student":
-    st.subheader("Student Portal")
-    st.markdown("Enter your academic and skill details to get suggested study groups.")
-
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center;color:#2563EB;'>🎯 Student Portal</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;color:#6b7280;'>Get personalized study group recommendations and insights.</p>", unsafe_allow_html=True)
+    
     with st.form("student_form"):
-        name = st.text_input("Name")
-        grade = st.number_input("Average Grade", min_value=0, max_value=20, value=10)
-        study_time = st.number_input("Study Hours per Week", min_value=0, max_value=40, value=5)
-        absences = st.number_input("Number of Absences", min_value=0, max_value=50, value=0)
-        # skills = st.text_area("Skills / Interests (comma-separated)")
-        article = st.text_area("Write a short article about yourself")
-        submit_student = st.form_submit_button("Get Suggested Group")
+        name = st.text_input("👤 Name")
+        grade = st.number_input("📊 Average Grade", min_value=0, max_value=20, value=10)
+        study_time = st.number_input("⏰ Study Hours per Week", min_value=0, max_value=40, value=5)
+        absences = st.number_input("🚫 Number of Absences", min_value=0, max_value=50, value=0)
+        submit_student = st.form_submit_button("✨ Get Suggested Group")
 
-    if submit_student:
+if submit_student:
+    with st.spinner("Analyzing your details and finding matching peers..."):
         st.success(f"Hello {name}, your group suggestions are being generated...")
 
-        # df = pd.read_csv(DEFAULT_CSV, sep=';')
-        # df['StudentID'] = df.get('StudentID', pd.Series(range(1, len(df)+1)))
+        # Load dataset
+        df = load_dataset(DEFAULT_CSV)
 
-        df = load_dataset(DEFAULT_CSV, sep=';')
-        df['StudentID'] = df.get('StudentID', pd.Series(range(1, len(df)+1)))
+        # Ensure StudentID exists
+        if 'StudentID' not in df.columns:
+            df['StudentID'] = range(1, len(df)+1)
 
-        # Extract structured features from article
-        def extract_features_from_article(text):
-            word_count = len(text.split())
-            avg_word_len = sum(len(w) for w in text.split()) / (word_count or 1)
-            sentiment = TextBlob(text).sentiment.polarity
-            return pd.Series({
-                'word_count': word_count,
-                'avg_word_len': avg_word_len,
-                'sentiment': sentiment
-            })
+        # # Extract article features
+        # def extract_features_from_article(text):
+        #     word_count = len(text.split())
+        #     avg_word_len = sum(len(w) for w in text.split()) / (word_count or 1)
+        #     sentiment = TextBlob(text).sentiment.polarity
+        #     return pd.Series({
+        #         'word_count': word_count,
+        #         'avg_word_len': avg_word_len,
+        #         'sentiment': sentiment
+        #     })
 
-        article_features = extract_features_from_article(article)
+        # article_features = extract_features_from_article(article)
 
+        # Append new student
         new_student = pd.DataFrame([{
             'G1': grade,
             'G2': grade,
@@ -61,86 +152,112 @@ if role == "Student":
         }])
         df = pd.concat([df, new_student], ignore_index=True)
 
-
-        # Features to use for clustering
-        base_features = ['G1','G2','G3','studytime','absences']
-        all_features = base_features + ['word_count', 'avg_word_len', 'sentiment']
-
-
-        # Preprocess and scale
+        # Preprocess, cluster, and summarize
+        all_features = ['G1','G2','G3','studytime','absences','word_count','avg_word_len','sentiment']
         df_encoded, X_scaled = preprocess_data(df, all_features, drop_cols=['StudentID'])
-
-        # Run KMeans
         labels, kmeans = run_kmeans(X_scaled, n_clusters=3)
         df, summary = cluster_summary(df, labels)
 
-        # Current student's cluster
-        current_student_id = df.iloc[-1]['StudentID']
+        # Identify student cluster
         student_cluster = df.iloc[-1]['Cluster']
-        st.info(f"You belong to Cluster {student_cluster}")
 
-        # Suggested peers (exclude current student)
-        peers = df[(df['Cluster'] == student_cluster) & (df['StudentID'] != current_student_id)]
-        st.subheader("Suggested Peer Group")
-        # st.dataframe(peers[['StudentID','G1','G2','G3','studytime','absences']])
-        st.dataframe(peers[['StudentID'] + base_features + ['word_count','avg_word_len','sentiment']])
+        # ---------------- Display Top Peers ----------------
+        peers = df[df['Cluster'] == student_cluster].iloc[:-1]  # exclude new student
+        if peers.empty:
+            st.warning("No peers available in your cluster.")
+        else:
+            peers['avg_grade'] = (peers['G1'] + peers['G2'] + peers['G3']) / 3
+            top_n = 5
+            peers_sorted = peers.sort_values(by='avg_grade', ascending=False).reset_index(drop=True)
+            peers_to_show = peers_sorted.head(top_n)
 
-       
+            st.markdown(f"<div class='cluster-msg'>You belong to <b>Cluster {student_cluster}</b> — explore your top 5 peers below!</div>", unsafe_allow_html=True)
+            st.markdown("### 👥 Top Matching Peers")
+            cols = st.columns(min(5, len(peers_to_show)))
 
+            for i, (_, row) in enumerate(peers_to_show.iterrows()):
+                word_count = row.get('word_count', 'N/A')
+                avg_word_len = row.get('avg_word_len', 'N/A')
+                sentiment = row.get('sentiment', 'N/A')
 
+                with cols[i % 5]:
+                    st.markdown(f"""
+                        <div class='student-card'>
+                            <b>StudentID:</b> {row['StudentID']}<br>
+                            <b>Grades:</b> {row['G1']}, {row['G2']}, {row['G3']} (Avg: {row['avg_grade']:.2f})<br>
+                            <b>Studytime:</b> {row['studytime']} hrs/week<br>
+                            <b>Absences:</b> {row['absences']}<br>
+                            <b>Article:</b> Words={word_count}, Len={avg_word_len}, Sent={sentiment}
+                        </div>
+                    """, unsafe_allow_html=True)
+
+            # Show more peers button — outside the loop
+            if len(peers_sorted) > top_n:
+                show_more_key = f"show_more_peers_cluster_{student_cluster}"
+                if st.button("Show more peers", key=show_more_key):
+                    more = peers_sorted.iloc[top_n: top_n + 20]
+                    st.markdown("### More peers")
+                    for _, row in more.iterrows():
+                        st.markdown(f"- StudentID {row['StudentID']} — Avg Grade: {row['avg_grade']:.2f}, Studytime: {row['studytime']}, Absences: {row['absences']}")
+
+# ------------------ TEACHER PORTAL ------------------
 else:
-    st.subheader("Teacher Portal")
-    st.markdown("Upload student dataset to analyze clusters and form groups.")
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center;color:#2563EB;'>📚 Teacher Portal</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;color:#6b7280;'>Analyze, cluster, and visualize student patterns easily.</p>", unsafe_allow_html=True)
 
-    uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
-    if uploaded_file:
-        df = pd.read_csv(uploaded_file, sep=';')
-    else:
-        st.info(f"No file uploaded. Using default dataset: {DEFAULT_CSV}")
-        # df = pd.read_csv(DEFAULT_CSV, sep=';')
-        df = load_dataset(DEFAULT_CSV, sep=';')
-
+    uploaded_file = st.file_uploader("📂 Upload Student Dataset", type=["csv"])
+    df = pd.read_csv(uploaded_file, sep=';') if uploaded_file else load_dataset(DEFAULT_CSV)
     df['StudentID'] = df.get('StudentID', pd.Series(range(1, len(df)+1)))
-    st.dataframe(df.head())
 
-    # Feature selection
-    features = st.multiselect(
-        "Select features for clustering",
-        df.columns.tolist(),
-        default=['G1','G2','G3','studytime','absences']
-    )
+    features = st.multiselect("Select features for clustering",
+                              df.columns.tolist(),
+                              default=['G1','G2','G3','studytime','absences'])
 
     if features:
-        # Preprocess and scale
         df_encoded, X_scaled = preprocess_data(df, features, drop_cols=['StudentID'])
-
-        # Select number of clusters
-        n_clusters = st.slider("Select number of clusters", min_value=2, max_value=6, value=3)
+        n_clusters = st.slider("Select number of clusters", 2, 6, 3)
         labels, kmeans = run_kmeans(X_scaled, n_clusters)
         df, summary = cluster_summary(df, labels)
-
-        # Silhouette Score
         sil_score = silhouette_score(X_scaled, labels)
-        st.write(f"Silhouette Score: {sil_score:.2f}")
 
-        # Cluster Summary
-        st.subheader("Cluster Summary")
-        st.dataframe(summary)
+        st.markdown(f"<div class='alert-success'>✅ Clustering completed with Silhouette Score: <b>{sil_score:.2f}</b></div>", unsafe_allow_html=True)
 
-        # PCA Visualization
-        st.subheader("Student Clusters PCA")
-        pca = PCA(n_components=2)
-        X_pca = pca.fit_transform(X_scaled)
-        fig, ax = plt.subplots(figsize=(8,6))
-        scatter = ax.scatter(X_pca[:,0], X_pca[:,1], c=labels, cmap='viridis', alpha=0.7)
-        ax.set_xlabel("PCA 1")
-        ax.set_ylabel("PCA 2")
-        ax.set_title("Student Clusters (PCA)")
-        st.pyplot(fig)
+        tabs = st.tabs(["📊 Summary", "🌀 PCA Plot", "🔥 Heatmap", "💾 Download CSVs"])
 
-        # plot_pca(X_scaled, labels)
-        #  heatmap visulaization
-        st.subheader("Feature Correlation Heatmap")
-        fig,ax= plt.subplots(figsize=(8,6))
-        sns.heatmap(df_encoded[features].corr(), annot=True, cmap="coolwarm", ax=ax)
-        st.pyplot(fig)
+        with tabs[0]:
+            st.markdown("### Cluster Summary Table")
+            st.dataframe(summary.style.background_gradient(cmap='Greens'))
+
+        with tabs[1]:
+            st.markdown("### PCA Visualization")
+            pca = PCA(n_components=2)
+            X_pca = pca.fit_transform(X_scaled)
+            fig, ax = plt.subplots(figsize=(8,6))
+            ax.scatter(X_pca[:,0], X_pca[:,1], c=labels, cmap='viridis', alpha=0.7)
+            ax.set_xlabel("PCA 1")
+            ax.set_ylabel("PCA 2")
+            ax.set_title("PCA Projection of Clusters")
+            st.pyplot(fig)
+
+        with tabs[2]:
+            st.markdown("### Feature Correlation Heatmap")
+            fig, ax = plt.subplots(figsize=(8,6))
+            sns.heatmap(df_encoded[features].corr(), annot=True, cmap="coolwarm", ax=ax)
+            st.pyplot(fig)
+
+        with tabs[3]:
+            st.markdown("### Download Clustered Data")
+            for cluster_num in sorted(df["Cluster"].unique()):
+                csv = df[df["Cluster"] == cluster_num].to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label=f"Download Cluster {cluster_num}",
+                    data=csv,
+                    file_name=f"cluster_{cluster_num}.csv",
+                    mime='text/csv'
+                )
+            st.download_button("Download Full Dataset",
+                               data=df.to_csv(index=False).encode('utf-8'),
+                               file_name="all_clusters.csv",
+                               mime='text/csv')
+
