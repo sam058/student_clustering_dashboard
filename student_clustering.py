@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
+from sklearn.preprocessing import StandardScaler
 import os
 
 
@@ -15,9 +16,11 @@ def load_dataset(csv_path="student-mat.csv", sep=';'):
 
 def preprocess_data(df, features, drop_cols=None):
     if drop_cols is None:
-        drop_cols = []
+       df_encoded = df.drop(columns=[col for col in drop_cols if col in df.columns])
 
-    df_encoded = df.copy()
+        # drop_cols = []
+    else:
+        df_encoded = df.copy()
     
     # Encode categorical columns
     for col in df_encoded.select_dtypes(include='object').columns:
@@ -32,8 +35,9 @@ def preprocess_data(df, features, drop_cols=None):
     df_encoded[features] = df_encoded[features].fillna(df_encoded[features].mean())
     
     # Scale features
-    X_scaled = StandardScaler().fit_transform(df_encoded[features])
-    return df_encoded, X_scaled
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(df_encoded[features])
+    return df_encoded, X_scaled, scaler
 
 
 def run_kmeans(X_scaled, n_clusters=3, random_state=42):
